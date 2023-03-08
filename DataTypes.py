@@ -13,7 +13,9 @@ class String(DataType):
 
 class Integer(DataType):
     name = "INTEGER"
-    def __init__(self, auto_increment:bool=False):
+    def __init__(self, auto_increment:bool=False, size=0, nullable=False, default=None, primary_key=False):
+        if default is not None and auto_increment == True:
+            raise Exception("Cannot detect what you need stupid idiot. what i`m need do auto increment or set default")
         super().__init__()
         self.autoincrement=auto_increment
 
