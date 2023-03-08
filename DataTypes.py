@@ -14,6 +14,7 @@ class String(DataType):
 class Integer(DataType):
     name = "INTEGER"
     def __init__(self, auto_increment:bool=False):
+        super().__init__()
         self.autoincrement=auto_increment
 
 class Data(DataType):
