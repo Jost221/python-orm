@@ -1,6 +1,7 @@
 import models
 from DataTypes import *
 import sqlite3
+import os
 
 class emptiness:
     pass
@@ -21,18 +22,18 @@ def for_pk(content, request):
     except Exception as ex:
         return ['error', ex]
 
-def for_null(content, request):
-    try:
-        if not content.nullable:
-            request+=f'NOT NULL '
-        return ['ok', request]
-    except Exception as ex:
-        return ['error', ex]
-    
 def for_auto_increment(content, request):
     try:
         if content.auto_increment:
             request+=f'AUTOINCREMENT '
+        return ['ok', request]
+    except Exception as ex:
+        return ['error', ex]
+
+def for_null(content, request):
+    try:
+        if not content.nullable:
+            request+=f'NOT NULL '
         return ['ok', request]
     except Exception as ex:
         return ['error', ex]
@@ -61,8 +62,10 @@ def for_check(content, request):
     except Exception as ex:
         return ['error', ex]
 
-CHECKS = [for_size, for_pk, for_null, for_auto_increment, for_unique, for_default, for_check]
-db_name = ''
+CHECKS = [for_size, for_pk, for_auto_increment, for_null, for_unique, for_default, for_check]
+if os.environ.get('DATABASE_NAME') == None:
+    os.environ['DATABASE_NAME'] = 'database.db'
+
 
 def get_atr(table_name: str, table: dict):
     returned = f'CREATE TABLE IF NOT EXISTS {table_name}('
@@ -76,14 +79,14 @@ def get_atr(table_name: str, table: dict):
                         returned = res[1]
                 returned =returned[:-1]+', '
         except:
-            raise Exception("Fuck you ugly motherless. Do you understand that in file models.py you need have onli table name as class?")
+            raise Exception("Fuck you ugly motherless. Do you understand that in file models.py you need have only table name as class?")
         
     returned=returned[:-2]+')'
+    print(returned)
     return returned
 
-
-def create_tables(path_with_name: str):
-    conn = sqlite3.connect(path_with_name)
+def create_tables():
+    conn = sqlite3.connect(os.environ.get('DATABASE_NAME'))
     cur = conn.cursor()
     request = ''
     for mod_name, value in models.__dict__.items():
@@ -96,13 +99,10 @@ def create_tables(path_with_name: str):
             # print(request)
             cur.execute(request)
             request=''
-    global db_name
-    db_name = path_with_name
     conn.commit()
 
 def write_db(table, **qwargs):
-    global db_name
-    conn = sqlite3.connect(db_name)
+    conn = sqlite3.connect(os.environ.get('DATABASE_NAME'))
     cur = conn.cursor()
     try:
         request = 'INSERT INTO '
@@ -123,22 +123,33 @@ def write_db(table, **qwargs):
                 conn.commit()
                 return True
     except Exception as ex:
-        raise Exception(f'well congratulations your father goes fucking you with a stool on the head with these words: {ex}')
+        raise Exception(f'well congratulations your father goes fucking you with a chair on the head with these words: {ex}')
 
 def read_db(table):
-    global db_name
-    conn = sqlite3.connect(db_name)
+    conn = sqlite3.connect(os.environ.get('DATABASE_NAME'))
     cur = conn.cursor()
     try:
-        request = 'INSERT INTO '
+        request = 'SELECT * FROM '
         for mod_name, value in models.__dict__.items():
             if table == value:
-                pass
+                request+=mod_name
+                cur.execute(request)
+                returned = []
+                obj = {}
+                for line in cur.fetchall():
+                    column_names = iter(cur.description)
+                    for val in line:
+                        obj[next(column_names)[0]] = val
+                    returned.append(type(mod_name, (), obj))
+                conn.commit()
+                return returned
     except Exception as ex:
         print(ex)
         return False
         
-
-create_tables('my_db.db')
-write_db(models.a, var1='value')
-write_db(models.a, var1='value1')
+# create_tables()
+# write_db(models.a, var1='value')
+# write_db(models.a, var1='value1')
+write_db(models.abob, name='name1')
+response = read_db(models.abob)
+print(response)
