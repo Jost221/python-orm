@@ -78,9 +78,11 @@ def get_atr(table_name: str, table: dict):
                     if res[0] == 'ok':
                         returned = res[1]
                 returned =returned[:-1]+', '
+
         except:
             raise Exception("Fuck you ugly motherless. Do you understand that in file models.py you need have only table name as class?")
-        
+    if 'PRIMARY KEY' not in returned:
+        returned+=f'id INTEGER PRIMARY KEY  '
     returned=returned[:-2]+')'
     print(returned)
     return returned
@@ -101,30 +103,6 @@ def create_tables():
             request=''
     conn.commit()
 
-def write_db(table, **qwargs):
-    conn = sqlite3.connect(os.environ.get('DATABASE_NAME'))
-    cur = conn.cursor()
-    try:
-        request = 'INSERT INTO '
-        for mod_name, value in models.__dict__.items():
-            if table == value:
-                request += f'{mod_name}('
-                req_val = 'VALUES('
-                for k, v in qwargs.items():
-                    request+=k+', '
-                    if v.__class__ == str:
-                        req_val+=f'\'{v}\','
-                    else:
-                        req_val+=f'{v},'
-                request=request[:-2]+') '
-                req_val=req_val[:-1]+') '
-                request+=req_val
-                cur.execute(request)
-                conn.commit()
-                return True
-    except Exception as ex:
-        raise Exception(f'well congratulations your father goes fucking you with a chair on the head with these words: {ex}')
-
 def read_db(table):
     conn = sqlite3.connect(os.environ.get('DATABASE_NAME'))
     cur = conn.cursor()
@@ -140,16 +118,18 @@ def read_db(table):
                     column_names = iter(cur.description)
                     for val in line:
                         obj[next(column_names)[0]] = val
+                    obj['__tablename__'] = mod_name
                     returned.append(type(mod_name, (), obj))
                 conn.commit()
                 return returned
     except Exception as ex:
         print(ex)
         return False
-        
-# create_tables()
+
+# UPDATE dbname.table1 SET name = ‘Людмила Иванова’ WHERE id = 2;
+
+create_tables()
 # write_db(models.a, var1='value')
-# write_db(models.a, var1='value1')
-write_db(models.abob, name='name1')
-response = read_db(models.abob)
+write_db(models.a, var1='value1')
+response = read_db(models.a)
 print(response)

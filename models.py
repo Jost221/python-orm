@@ -6,3 +6,6 @@ class a:
 
 class abob:
     name = DataTypes.String(primary_key=True)
+
+class Pizdos:
+    obub = DataTypes.String()
