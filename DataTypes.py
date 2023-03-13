@@ -48,13 +48,13 @@ class ForeignKey():
 class Table_Engine:
     def __init__(self, **qwargs):
         for k, v in qwargs.items():
-            self.__setattr__(k, v)        
+            self.__setattr__(k, v)
     
     @classmethod
     def read(cls):
         conn = sqlite3.connect(os.environ.get('DATABASE_NAME'))
         cur = conn.cursor()
-        request  = "SELECT * FROM " + cls.__class__.__name__ # fix this line
+        request  = "SELECT * FROM " + cls.__name__ # fix this line
         cur.execute(request)
         conn.commit()
         return cur.fetchall()
@@ -77,12 +77,5 @@ class Table_Engine:
         except Exception as ex:
             raise Exception(f'well congratulations your father goes fucking you with a chair on the head with these words: {ex}')
 
-class a(Table_Engine):
-    var1 = String(default='default', size=10)
-
 if os.environ.get('DATABASE_NAME') == None:
     os.environ['DATABASE_NAME'] = 'database.db'
-
-
-var = a.read()
-print(var)

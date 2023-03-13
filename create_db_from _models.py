@@ -125,11 +125,32 @@ def read_db(table):
     except Exception as ex:
         print(ex)
         return False
-
-# UPDATE dbname.table1 SET name = ‘Людмила Иванова’ WHERE id = 2;
+    
+def write_db(table, **qwargs):
+    conn = sqlite3.connect(os.environ.get('DATABASE_NAME'))
+    cur = conn.cursor()
+    try:
+        request = 'INSERT INTO '
+        for mod_name, value in models.__dict__.items():
+            if table == value:
+                request += f'{mod_name}('
+                req_val = 'VALUES('
+                for k, v in qwargs.items():
+                    request+=k+', '
+                    if v.__class__ == str:
+                        req_val+=f'\'{v}\','
+                    else:
+                        req_val+=f'{v},'
+                request=request[:-2]+') '
+                req_val=req_val[:-1]+') '
+                request+=req_val
+                cur.execute(request)
+                conn.commit()
+                return True
+    except Exception as ex:
+        raise Exception(f'well congratulations your father goes fucking you with a chair on the head with these words: {ex}')
+    
 
 create_tables()
-# write_db(models.a, var1='value')
-write_db(models.a, var1='value1')
-response = read_db(models.a)
-print(response)
+write_db(models.a, var1='val')
+print(read_db(models.a))
