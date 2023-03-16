@@ -89,6 +89,8 @@ in result you get list object 'a' with variables var1 and var2
   <img alt="Shows an illustrated sun in light mode and a moon with stars in dark mode." src="https://im.wampi.ru/2023/03/10/image1cf39d530b24f1ae.png">
 </picture>
 
+8========0
+
 further more.
 stages of development:
 1. adding complex values such as datetime
