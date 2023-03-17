@@ -45,7 +45,7 @@ you can add in your code this line
 ```python
 from better_orm import DataTypes
 
-DataTypes.db)settings.path = 'database.db'
+DataTypes.db_settings.path = 'database.db'
 ```
 ---
 
