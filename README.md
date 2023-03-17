@@ -1,4 +1,4 @@
-# python-orm-custom 
+# better-orm Python 
 
 История такова:
 
@@ -10,7 +10,6 @@ SQLAlhimy (либо я просто не разобрался как они ра
 
 ## How to use?
 
-Now i'm testing this code not as library, but as live work file.
 Consider how to use
 
 ---
@@ -20,33 +19,33 @@ Consider how to use
 you need create file
 > models.py
 
+in this file you need keep only your model and variables your model
+
 example of a filling file
 
 ```Python
-import DataTypes
+from better_orm import DataTypes
 
-class a:
+class a(DataTypes.Table_Engine):
     var1 = DataTypes.String(default='default', size=10)
     var2 = DataTypes.Integer(primary_key=True, auto_increment=True) 
 
-class abob:
-    name = DataTypes.String(primary_key=True)`
+class abob(DataTypes.Table_Engine):
+    name = DataTypes.String(primary_key=True)
 ```
 
 then you need run function `create_db()`
 
 ---
 
-if you need custom name db you need add in envirements parametr DATABASE_NAME
-
-value db name take vrom envirements with help `os` library
+if you need custom name db you need `import DataType` and in replace `db_settings.path`
 
 you can add in your code this line
 
 ```python
-import os
+from better_orm import DataTypes
 
-os.environ['DATABASE_NAME'] = 'db_name.db'
+DataTypes.db)settings.path = 'database.db'
 ```
 ---
 
@@ -75,13 +74,24 @@ Table a:
 |-----:|-----------|
 |"value1"|1|
 
+or you can create with help models
+
+```Python
+mod = a.add(var1="oaoaoaoa")
+mod.save()
+```
+
+if you use this code you get the same result as with funcrions write_db
+
 ---
 
-after write data you need and read it. for read usin function `read_db(models)`
+after write data you need and read it. for read using your class with model
 
 Exemple:
 ```python
-result = read_db(models.a)
+from models import *
+
+response = a.read()
 ```
 in result you get list object 'a' with variables var1 and var2
 

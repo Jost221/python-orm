@@ -1,6 +1,9 @@
 import os
 import sqlite3
 
+
+class empty():
+    pass
 class DataType:
     def __init__(self, size=0, nullable=False, default=None, primary_key=False, foreign_key=False, check=None, unique=None):
         if primary_key and nullable:
@@ -48,34 +51,54 @@ class ForeignKey():
 class Table_Engine:
     def __init__(self, **qwargs):
         for k, v in qwargs.items():
-            self.__setattr__(k, v)
+            self.__all__.__setattr__(k, v)
     
     @classmethod
     def read(cls):
-        conn = sqlite3.connect(os.environ.get('DATABASE_NAME'))
+        conn = sqlite3.connect(db_settings.path)
         cur = conn.cursor()
         request  = "SELECT * FROM " + cls.__name__ # fix this line
         cur.execute(request)
         conn.commit()
-        return cur.fetchall()
+        values = cur.fetchall()
+        returned = []
+        obj = {}
+        for line in values:
+            column_names = iter(cur.description)
+            for val in line:
+                obj[next(column_names)[0]] = val
+            returned.append(type(cls.__name__, (), obj))
+        conn.commit()
+        return returned
 
-    def save(self):
-        conn = sqlite3.connect(os.environ.get('DATABASE_NAME'))
+    @classmethod
+    def save(cls):
+        conn = sqlite3.connect(db_settings.path)
         cur = conn.cursor()
         try:
-            request = 'INSERT INTO '+ self.__class__.__name__ + ' ('
+            request = 'INSERT INTO '+ cls.__name__ + ' ('
             values = 'VALUES ('
-            for k, v in self.__dict__.items():
-                request+=f'{k}, '
-                if v.__class__ == str:
-                    values+=f'"{v}", '
-                else:
-                    values+=f'{v}, '
+            for k, v in cls.__dict__.items():
+                if k not in empty.__dict__.keys():
+                    request+=f'{k}, '
+                    if v.__class__ == str:
+                        values+=f'"{v}", '
+                    else:
+                        values+=f'{v}, '
             request = request[:-2] + ')'
             values = values[:-2] + ')'
-            
+            cur.execute(request+values)
+            conn.commit()
+            return True
         except Exception as ex:
             raise Exception(f'well congratulations your father goes fucking you with a chair on the head with these words: {ex}')
 
-if os.environ.get('DATABASE_NAME') == None:
-    os.environ['DATABASE_NAME'] = 'database.db'
+    @classmethod
+    def add(cls, **qwargs):
+        obj = qwargs
+        new_cls = type(cls.__name__, (Table_Engine,), obj)
+        return new_cls
+
+class db_settings:
+    path = 'database.db'
+
