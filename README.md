@@ -60,11 +60,11 @@ DataTypes.db_settings.path = 'database.db'
 
 ## Write data
 
-For write data with this library you need using function `write_db(table_name, **data)`
+For write data with this library you need using function `write_row(table_name, **data)`
 
 Example:
 ```python
-write_db(models.a, var1='value1')
+write_row(models.a, var1='value1')
 ```
 
 with this function your database get next value
@@ -74,7 +74,7 @@ Table a:
 |-----:|-----------|
 |"value1"|1|
 
-or you can create with help models
+or using models
 
 ```Python
 mod = a.add(var1="oaoaoaoa")

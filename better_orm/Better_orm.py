@@ -103,7 +103,7 @@ def create_tables():
             request=''
     conn.commit()
     
-def write_db(table, **qwargs):
+def write_row(table, **qwargs):
     conn = sqlite3.connect(db_settings.path)
     cur = conn.cursor()
     try:
