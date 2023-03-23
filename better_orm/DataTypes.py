@@ -5,7 +5,7 @@ import sqlite3
 class empty():
     pass
 class DataType:
-    def __init__(self, size=0, nullable=False, default=None, primary_key=False, foreign_key=False, check=None, unique=None):
+    def __init__(self, size=0, nullable=False, default=None, primary_key=False, check=None, unique=None):
         if primary_key and nullable:
             raise Exception("And so, are you sure you need to make a database? because what you're trying to do reminds me of self-castration. PK must not be null")
         self.size = size
@@ -14,39 +14,23 @@ class DataType:
         self.unique = unique
         self.check = check
         self.primary_key = primary_key
-        self.foreign_key = foreign_key
 
 class String(DataType):
     name = "TEXT"
 
 class Integer(DataType):
     name = "INTEGER"
-    def __init__(self, auto_increment:bool=False, size=0, nullable=False, default=None, primary_key=False, foreign_key=False):
-        if default is not None and auto_increment == True:
-            raise Exception("Cannot detect what you need stupid idiot. what i`m need do auto increment or set default")
-        super().__init__(size, nullable, default, primary_key, foreign_key)
-        self.auto_increment=auto_increment
-
-class Data(DataType):
-    name = "DATA"
 
 class Float(DataType):
     name = "REAL"
 
-class Boolean(DataType):
-    name = "BOOLEAN"
-
-class Time(DataType):
-    name = "TIME"
-
-class DateTime():
-    name = "DATETIME"
-
-class Binary():
+class Binary(DataType):
     name = "BINARY"
 
-class ForeignKey():
-    name = "FOREIGN KEY"
+class ForeignKey(DataType):
+    name = "REFERENCES"
+    def __init__(self, table_column, on_delete=None, on_update=None, size=0, nullable=False, default=None, primary_key=False, check=None, unique=None):
+        pass
 
 class Table_Engine:
     def __init__(self, **qwargs):
@@ -101,4 +85,11 @@ class Table_Engine:
 
 class db_settings:
     path = 'database.db'
+    debug = False # добавить возможность с дебагом
 
+# ----------------------------------------------------------------
+# разобравться в работе autoincrement
+# добавить FK
+# Почистить лишние типы данных
+# Этап миграций
+# ----------------------------------------------------------------
