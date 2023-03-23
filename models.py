@@ -15,4 +15,4 @@ class Pizdo(DataTypes.Table_Engine):
     obub = DataTypes.String()
 
 class Todos(DataTypes.Table_Engine):
-    fk = DataTypes.ForeignKey(Pizdos.obub)
+    fk = DataTypes.ForeignKey('Pizdos.obub')
