@@ -74,7 +74,7 @@ def get_atr(table_name: str, table: dict):
             if info_column.__class__.__weakref__.__objclass__ == DataType:
                 returned+=f'{column} {info_column.name} '
                 if info_column.__class__.__name__ == 'ForeignKey':
-                    reutrned += f'REFERENCES {info_column.column}'
+                    returned += info_column.column + ' '
                 else:    
                     for check in CHECKS:
                         res = check(info_column, returned)
@@ -82,7 +82,7 @@ def get_atr(table_name: str, table: dict):
                             returned = res[1]
                 returned =returned[:-1]+', '
 
-        except:
+        except Exception as ex:
             raise Exception("Fuck you ugly motherless. Do you understand that in file models.py you need have only table name as class?")
     if 'PRIMARY KEY' not in returned:
         returned+=f'id INTEGER PRIMARY KEY  '
