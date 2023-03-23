@@ -73,10 +73,13 @@ def get_atr(table_name: str, table: dict):
         try:
             if info_column.__class__.__weakref__.__objclass__ == DataType:
                 returned+=f'{column} {info_column.name} '
-                for check in CHECKS:
-                    res = check(info_column, returned)
-                    if res[0] == 'ok':
-                        returned = res[1]
+                if info_column.__class__.__name__ == 'ForeignKey':
+                    reutrned += f'REFERENCES {info_column.column}'
+                else:    
+                    for check in CHECKS:
+                        res = check(info_column, returned)
+                        if res[0] == 'ok':
+                            returned = res[1]
                 returned =returned[:-1]+', '
 
         except:
