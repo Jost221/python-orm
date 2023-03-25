@@ -32,7 +32,9 @@ class ForeignKey(DataType):
     def __init__(self, table_column, on_delete=None, on_update=None, size=0, nullable=False, default=None, primary_key=False, check=None, unique=None):
         self.column = ' ('.join(table_column.split('.'))+')'
         if on_delete != None:
-            self.column += ' ONDELETE' 
+            self.column += ' ON DELETE ' + on_delete
+        if on_update != None:
+            self.column += ' on UPDATE ' + on_update
 
 class Table_Engine:
     def __init__(self, **qwargs):
