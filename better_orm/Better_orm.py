@@ -67,12 +67,12 @@ def for_check(content, request):
 
 CHECKS = [for_size, for_pk, for_auto_increment, for_null, for_unique, for_default, for_check]
 
-def get_atr(table_name: str, table: dict):
-    returned = f'CREATE TABLE IF NOT EXISTS {table_name}('
+def get_table(table_name: str, table: dict):
+    returned = f'CREATE TABLE IF NOT EXISTS "{table_name}"('
     for column, info_column in table.items():
         try:
             if info_column.__class__.__weakref__.__objclass__ == DataType:
-                returned+=f'{column} {info_column.name} '
+                returned+=f'"{column}" {info_column.name} '
                 if info_column.__class__.__name__ == 'ForeignKey':
                     returned += info_column.column + ' '
                 else:    
@@ -85,14 +85,11 @@ def get_atr(table_name: str, table: dict):
         except Exception as ex:
             raise Exception("Fuck you ugly motherless. Do you understand that in file models.py you need have only table name as class?")
     if 'PRIMARY KEY' not in returned:
-        returned+=f'id INTEGER PRIMARY KEY  '
+        returned+=f'"id" INTEGER PRIMARY KEY  '
     returned=returned[:-2]+')'
-    print(returned)
     return returned
 
-def create_tables():
-    conn = sqlite3.connect(db_settings.path)
-    cur = conn.cursor()
+def create_execute():
     request = ''
     for mod_name, value in models.__dict__.items():
         if hasattr(value, '__module__') and value.__module__ == 'models':
@@ -101,9 +98,14 @@ def create_tables():
             for i in empty.__dict__:
                 if i in mod:
                     mod.pop(i)
-            request+= get_atr(table_name, mod)
-            cur.execute(request)
-            request=''
+            request+= get_table(table_name, mod)+';\n'
+    print(request)
+    return request
+
+def create_tables():
+    conn = sqlite3.connect(db_settings.path)
+    cur = conn.cursor()
+    cur.executescript(create_execute())
     conn.commit()
     
 def write_row(table, **qwargs):
@@ -129,3 +131,12 @@ def write_row(table, **qwargs):
                 return True
     except Exception as ex:
         raise Exception(f'well congratulations your father goes fucking you with a chair on the head with these words: {ex}')
+    
+def get_generate_db_script():
+    conn = sqlite3.connect(db_settings.path)
+    cur = conn.cursor()
+    cur.execute('SELECT sql FROM sqlite_master WHERE type="table"')
+    gen_line = ',\n'.join([x[0] for x in cur.fetchall()])
+    print(gen_line)
+    pass
+    # SELECT name FROM sqlite_master WHERE type='table';

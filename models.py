@@ -1,5 +1,5 @@
 from better_orm import DataTypes
-
+# play write использовать для парса леруа
 class a(DataTypes.Table_Engine):
     var1 = DataTypes.String(default='default', size=10)
     var2 = DataTypes.Integer(primary_key=True) 
