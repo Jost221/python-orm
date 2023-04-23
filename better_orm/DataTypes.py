@@ -34,7 +34,7 @@ class ForeignKey(DataType):
         if on_delete != None:
             self.column += ' ON DELETE ' + on_delete
         if on_update != None:
-            self.column += ' on UPDATE ' + on_update
+            self.column += ' ON UPDATE ' + on_update
 
 class Table_Engine:
     def __init__(self, **qwargs):
