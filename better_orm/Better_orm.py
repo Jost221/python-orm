@@ -2,7 +2,7 @@ import models
 from .DataTypes import *
 import sqlite3
 import os
-
+import datetime
 
 class empty:
     pass
@@ -106,7 +106,7 @@ def get_table(table_name: str, table: dict):
                         res = check(info_column, returned)
                         if res[0] == 'ok':
                             returned = res[1]
-                returned = returned[:-1]+', '
+                returned = returned+', '
 
         except Exception as ex:
             raise Exception(
@@ -161,6 +161,7 @@ def write_row(table, **qwargs):
                 request += req_val
                 cur.execute(request)
                 conn.commit()
+                conn.close()
                 return True
     except Exception as ex:
         raise Exception(
@@ -173,57 +174,88 @@ def get_generate_db_script():
     cur.execute('SELECT sql FROM sqlite_master WHERE type="table"')
     old_data = ';\n'.join([x[0] for x in cur.fetchall()])
     new_data = create_execute()
-    new_data = new_data.replace('CREATE TABLE IF NOT EXISTS ', '').replace(';', '').replace('\n\n', '\98;0hihihiiiiiiitin')
-    old_data = old_data.replace('CREATE TABLE "migrations"(filename TEXT)', '').replace('CREATE TABLE ', '').replace(';', '').replace('\n\n', '\n')
+    new_data = new_data.replace('CREATE TABLE IF NOT EXISTS ', '').replace(';', '').replace('\n\n', '\n').strip('\n')
+    old_data = old_data.replace('CREATE TABLE "migrations"(filename TEXT)', '').replace('CREATE TABLE ', '').replace(';', '').replace('\n\n', '\n').strip('\n')
 
     add_list = []
     remove_list = []
     update_list_r = []
     update_list_a = []
+    FD_add_list = []
+    FD_remove_list = []
+    FD_update_list_r = []
+    FD_update_list_a = []
+    
+    def get_line(data, table_name):
+        table_name = table_name.replace('"', '')
+        for table in data.split('\n'):
+            table = table.replace('"', '')
+            if table_name in table and not table[table.find(table_name)+len(table_name)].isalnum():
+                return table
+        return ''
+
+    for old_t in old_data.split('\n'):
+        old_table = old_t.split('(')[0]
+        if old_table not in new_data:
+            remove_list.append(f'DROP TABLE {old_table}')
+            FD_remove_list.append(f'CREATE TABLE IF NOT EXISTS {old_t}')
+        else:
+            if old_t.replace('"', '') not in new_data:
+                old_t = old_t.split('(')
+                table = get_line(new_data, old_t[0])
+                for atr in [x for x in "(".join(old_t[1:]).strip(')').split(',') if (x!='' and x!=' ' and x!=[])]:
+                    if atr.replace('"', '') not in table:
+                        col_name = atr.split('"')[1]
+                        update_list_r.append(f'ALTER TABLE {old_t[0]} DROP COLUMN {col_name}')
+                        FD_update_list_r.append(f'ALTER TABLE {old_t[0]} ADD COLUMN {atr}')
 
     for new_t in new_data.split('\n'):
-        if new_t not in old_data:
-            rewrite_i = new_t.split('"')
-            if rewrite_i[1] not in old_data:
-                add_list.append("CREATE TABLE IF NOT EXIST "+new_t)
-            else:
-                tables = old_data.split('\n')
-                for table in tables:
-                    if rewrite_i[1] in table:
-                        list_atr = '"'.join(rewrite_i[3:]).split(',')
-                        for atr in list_atr:
-                            if (atr not in table and atr!=list_atr[-1]) or (atr == list_atr[-1] and atr[:-1] not in table):
-                                update_list_a.append(f'ALTER TABLE {rewrite_i[1]} ADD COLUMN {atr[:-1]}')
-                        list_atr = table.split("(")[1].split(',')
-                        table = '"'.join(rewrite_i[2:])[1:]
-                        for atr in list_atr:
-                            if ((atr not in table and atr!=list_atr[-1]) or (atr == list_atr[-1] and atr[:-1] not in table)) and "id" not in atr:
-                                old_col = atr.split('"')[1]
-                                update_list_r.append(f'ALTER TABLE {rewrite_i[1]} DROP COLUMN {old_col};')
+        new_table = new_t.split('"')[1]
+        if new_t.split('"')[1] not in old_data:
+            add_list.append(f'CREATE TABLE IF NOT EXISTS {new_t}')
+            FD_add_list.append(f'DROP TABLE {new_table}')
+        else:
+            if new_t not in old_data:
+                new_t = new_t.split('"')
+                table = get_line(old_data, new_t[1])
+                for atr in ('"'+'"'.join(new_t[3:])[:-1]).split(','):
+                    if atr.replace('"', '') not in table:
+                        update_list_a.append(f'ALTER TABLE "{new_t[1]}" ADD COLUMN {atr[:-1]}')
+                        atr = atr.split('"')[1]
+                        FD_update_list_a.append(f'ALTER TABLE "{new_t[1]}" DROP COLUMN {atr}')
 
-    conc = "\n".join(update_list_a)+"\n".join(update_list_r)
-    for old_t in old_data.split('\n'):
-        if old_t != '':
-            edited_table = old_t.split('"')[1]
-        if old_t not in new_data and edited_table not in conc:
-            rewrite_i = old_t.split('"')
-            for i in new_data.split('\n'):
-                need_add = True
-                i = i.split('"')
-                if len(i)>1 and rewrite_i[1] in i[1]:
-                    need_add = False
-            if need_add:
-                remove_list.append(f'DROP TABLE "{rewrite_i[1]}";')
+    upgrade = '\n'+";\n".join(add_list)+';\n'+";\n".join(remove_list)+';\n'+";\n".join(update_list_a)+';\n'+";\n".join(update_list_r)
+    downgrade = '\n'+";\n".join(FD_add_list)+';\n'+";\n".join(FD_remove_list)+';\n'+";\n".join(FD_update_list_a)+';\n'+";\n".join(FD_update_list_r)
 
+    textFromPattern = f'''import sqlite3
+from Better_orm import db_settings
 
-    print('add')
-    print(add_list)
-    print('-------------------------------------')
-    print('update add')
-    print(update_list_a)
-    print('-------------------------------------')
-    print('update remove')
-    print(update_list_r)
-    print('-------------------------------------')
-    print('remove')
-    print(remove_list)
+def upgrade():
+    upgrade_execut = """{upgrade}"""
+    conn = sqlite3.connect(db_settings.path)
+    cur = conn.cursor()
+    cur.executescript(upgrade_execut)
+
+def downgrade():
+    downgrade_execut = """{downgrade}"""
+    conn = sqlite3.connect(db_settings.path)
+    cur = conn.cursor()
+    cur.executescript(downgrade_execut)'''
+
+    try:
+        os.mkdir('migrations')
+    except:
+        pass
+
+    fileName = str(datetime.datetime.now().timestamp())
+    with open(f'./migrations/{fileName}.py', 'w') as f:
+        f.write(textFromPattern)
+
+    print(upgrade)
+
+    cur.execute(f'INSERT INTO migrations (filename) VALUES({fileName})')
+    cur.executescript(upgrade)
+    conn.commit()
+    conn.close()
+
+    # debugging
