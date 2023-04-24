@@ -82,7 +82,7 @@ class Table_Engine:
             raise Exception(f'well congratulations your father goes fucking you with a chair on the head with these words: {ex}')
 
     @classmethod
-    def add(cls, **qwargs):
+    def create(cls, **qwargs):
         obj = qwargs
         new_cls = type(cls.__name__, (Table_Engine,), obj)
         return new_cls
@@ -90,10 +90,3 @@ class Table_Engine:
 class db_settings:
     path = 'database.db'
     debug = False # добавить возможность с дебагом
-
-# ----------------------------------------------------------------
-# разобравться в работе autoincrement                       complete
-# добавить FK                                               complete
-# Почистить лишние типы данных                              complite
-# Этап миграций                                             processing
-# ----------------------------------------------------------------

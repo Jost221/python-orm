@@ -15,7 +15,7 @@ class abob(DataTypes.Table_Engine):
     puk = DataTypes.String()
 
 class Pizdos(DataTypes.Table_Engine):
-    # obub = DataTypes.String()
+    obub = DataTypes.String()
     scale = DataTypes.Integer()
 
 class Pizdo(DataTypes.Table_Engine):

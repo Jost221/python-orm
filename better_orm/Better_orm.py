@@ -4,6 +4,7 @@ import sqlite3
 import os
 import datetime
 
+
 class empty:
     pass
 
@@ -87,9 +88,6 @@ def get_snapshot(table_name, table):
         a[table_name][key] = value.__dict__
 
 
-
-
-
 def get_table(table_name: str, table: dict):
     returned = f'CREATE TABLE IF NOT EXISTS "{table_name}"('
     global a
@@ -136,12 +134,11 @@ def create_tables():
     cur = conn.cursor()
     cur.executescript(create_execute() +
                       'CREATE TABLE IF NOT EXISTS "migrations"(filename TEXT)')
-    # global last_filename
-    # cur.execute(f'INSERT INTO "migrations"(filename) VALUES ({last_filename})')
     conn.commit()
+    conn.close()
 
 
-def write_row(table, **qwargs):
+def write(table, **qwargs):
     conn = sqlite3.connect(db_settings.path)
     cur = conn.cursor()
     try:
@@ -168,14 +165,21 @@ def write_row(table, **qwargs):
             f'well congratulations your father goes fucking you with a chair on the head with these words: {ex}')
 
 
-def get_generate_db_script():
+def migrate():
     conn = sqlite3.connect(db_settings.path)
     cur = conn.cursor()
     cur.execute('SELECT sql FROM sqlite_master WHERE type="table"')
     old_data = ';\n'.join([x[0] for x in cur.fetchall()])
     new_data = create_execute()
-    new_data = new_data.replace('CREATE TABLE IF NOT EXISTS ', '').replace(';', '').replace('\n\n', '\n').strip('\n')
-    old_data = old_data.replace('CREATE TABLE "migrations"(filename TEXT)', '').replace('CREATE TABLE ', '').replace(';', '').replace('\n\n', '\n').strip('\n')
+    for_old = [
+        'CREATE TABLE "migrations"(filename TEXT)', 'CREATE TABLE ', ';']
+    for_new = ['CREATE TABLE IF NOT EXISTS ', ';']
+    for param in for_old:
+        old_data = old_data.replace(param, '')
+    for param in for_new:
+        new_data = new_data.replace(param, '')
+    old_data = old_data.replace('\n\n', '\n').strip('\n')
+    new_data = new_data.replace('\n\n', '\n').strip('\n')
 
     add_list = []
     remove_list = []
@@ -185,12 +189,13 @@ def get_generate_db_script():
     FD_remove_list = []
     FD_update_list_r = []
     FD_update_list_a = []
-    
+
     def get_line(data, table_name):
         table_name = table_name.replace('"', '')
         for table in data.split('\n'):
             table = table.replace('"', '')
-            if table_name in table and not table[table.find(table_name)+len(table_name)].isalnum():
+            if table_name in table and not table[table.find(table_name)+\
+                                                 len(table_name)].isalnum():
                 return table
         return ''
 
@@ -203,11 +208,15 @@ def get_generate_db_script():
             if old_t.replace('"', '') not in new_data:
                 old_t = old_t.split('(')
                 table = get_line(new_data, old_t[0])
-                for atr in [x for x in "(".join(old_t[1:]).strip(')').split(',') if (x!='' and x!=' ' and x!=[])]:
-                    if atr.replace('"', '') not in table:
+                for atr in [x \
+                            for x in "(".join(old_t[1:]).strip(')').split(',')\
+                                if (x != '' and x != ' ' and x != [])]:
+                    if atr.replace('"', '').strip() not in table:
                         col_name = atr.split('"')[1]
-                        update_list_r.append(f'ALTER TABLE {old_t[0]} DROP COLUMN {col_name}')
-                        FD_update_list_r.append(f'ALTER TABLE {old_t[0]} ADD COLUMN {atr}')
+                        update_list_r.append(
+                            f'ALTER TABLE {old_t[0]} DROP COLUMN {col_name}')
+                        FD_update_list_r.append(
+                            f'ALTER TABLE {old_t[0]} ADD COLUMN {atr}')
 
     for new_t in new_data.split('\n'):
         new_table = new_t.split('"')[1]
@@ -219,13 +228,27 @@ def get_generate_db_script():
                 new_t = new_t.split('"')
                 table = get_line(old_data, new_t[1])
                 for atr in ('"'+'"'.join(new_t[3:])[:-1]).split(','):
-                    if atr.replace('"', '') not in table:
-                        update_list_a.append(f'ALTER TABLE "{new_t[1]}" ADD COLUMN {atr[:-1]}')
+                    if atr.replace('"', '').strip() not in table:
+                        update_list_a.append(
+                            f'ALTER TABLE "{new_t[1]}" ADD COLUMN {atr[:-1]}')
                         atr = atr.split('"')[1]
-                        FD_update_list_a.append(f'ALTER TABLE "{new_t[1]}" DROP COLUMN {atr}')
+                        FD_update_list_a.append(
+                            f'ALTER TABLE "{new_t[1]}" DROP COLUMN {atr}')
 
-    upgrade = '\n'+";\n".join(add_list)+';\n'+";\n".join(remove_list)+';\n'+";\n".join(update_list_a)+';\n'+";\n".join(update_list_r)
-    downgrade = '\n'+";\n".join(FD_add_list)+';\n'+";\n".join(FD_remove_list)+';\n'+";\n".join(FD_update_list_a)+';\n'+";\n".join(FD_update_list_r)
+    def concatenete_data(string, list_string):
+        for i in list_string:
+            if string != '\n':
+                string += ';\n'
+            string += ";\n".join(i)
+        return string
+
+    upgrade = '\n'
+    upgrade = concatenete_data(
+        upgrade, [add_list, remove_list, update_list_a, update_list_r])
+    downgrade = '\n'
+    downgrade = concatenete_data(
+        downgrade, [FD_add_list, FD_remove_list, \
+                    FD_update_list_a, FD_update_list_r])
 
     textFromPattern = f'''import sqlite3
 from better_orm import db_settings

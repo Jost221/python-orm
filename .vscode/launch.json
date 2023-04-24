@@ -8,7 +8,7 @@
             "name": "Python: Current File",
             "type": "python",
             "request": "launch",
-            "program": "${workspaceFolder}\\processing.py",
+            "program": "${workspaceFolder}/processing.py",
             "console": "integratedTerminal",
             "justMyCode": true
         }
