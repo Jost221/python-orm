@@ -228,7 +228,7 @@ def get_generate_db_script():
     downgrade = '\n'+";\n".join(FD_add_list)+';\n'+";\n".join(FD_remove_list)+';\n'+";\n".join(FD_update_list_a)+';\n'+";\n".join(FD_update_list_r)
 
     textFromPattern = f'''import sqlite3
-from Better_orm import db_settings
+from better_orm import db_settings
 
 def upgrade():
     upgrade_execut = """{upgrade}"""
