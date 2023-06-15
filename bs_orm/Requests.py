@@ -1,16 +1,11 @@
-import models
 from .DataTypes import *
 import sqlite3
 import os
 import datetime
-
+from . import db_settings
 
 class empty:
     pass
-
-
-class db_settings:
-    path = 'database.db'
 
 
 def for_size(content, request):
@@ -61,7 +56,7 @@ def for_unique(content, request):
 def for_default(content, request):
     try:
         if content.default:
-            request += f'DEFAULT {content.default}'
+            request += f'DEFAULT "{content.default}"'
         return ['ok', request]
     except Exception as ex:
         return ['error', ex]
@@ -117,19 +112,19 @@ def get_table(table_name: str, table: dict):
 
 def create_execute():
     request = ''
-    for mod_name, value in models.__dict__.items():
-        if hasattr(value, '__module__') and value.__module__ == 'models':
+    for mod_name, value in db_settings.models.__dict__.items():
+        if hasattr(value, '__module__') and 'models' in value.__module__:
             table_name = mod_name
             mod = dict(value.__dict__)
             for i in empty.__dict__:
                 if i in mod:
                     mod.pop(i)
             request += get_table(table_name, mod)+';\n'
-    # print(request)
     return request
 
 
-def create_tables():
+def create_tables(models):
+    db_settings.models = models
     conn = sqlite3.connect(db_settings.path)
     cur = conn.cursor()
     cur.executescript(create_execute() +
@@ -143,7 +138,9 @@ def write(table, **qwargs):
     cur = conn.cursor()
     try:
         request = 'INSERT INTO '
-        for mod_name, value in models.__dict__.items():
+        if db_settings.models == 0:
+            raise  Exception("You haven`t models file. Please create it!")
+        for mod_name, value in db_settings.models.__dict__.items():
             if table == value:
                 request += f'{mod_name}('
                 req_val = 'VALUES('
@@ -164,6 +161,27 @@ def write(table, **qwargs):
         raise Exception(
             f'well congratulations your father goes fucking you with a chair on the head with these words: {ex}')
 
+def update(cls_s, **qwargs):
+        request = ''
+        if type(cls_s) != list:
+            cls_s = [cls_s]
+        for cls in cls_s:
+            request += f'UPDATE {cls.__name__} SET'
+            for atr, val in qwargs.items():
+                request+=cls.__check_type__(atr, val) + ','
+            request = request[:-1] + ' WHERE'
+            flag = False
+            for atr, val in cls.__dict__.items():
+                if not atr.startswith('__') and val != None:
+                    request+=cls.__check_type__(atr, val) + ' AND'
+                    flag = True
+            if flag: request = request[:-4]
+            request+'\n'
+        conn = sqlite3.connect(db_settings.path)
+        cur = conn.cursor()
+        cur.executescript(request)
+        conn.commit()
+        return True
 
 def migrate():
     conn = sqlite3.connect(db_settings.path)
@@ -274,11 +292,7 @@ def downgrade():
     with open(f'./migrations/{fileName}.py', 'w') as f:
         f.write(textFromPattern)
 
-    print(upgrade)
-
     cur.execute(f'INSERT INTO migrations (filename) VALUES({fileName})')
     cur.executescript(upgrade)
     conn.commit()
     conn.close()
-
-    # debugging

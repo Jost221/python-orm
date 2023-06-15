@@ -1,16 +1,22 @@
-from better_orm import Better_orm
-from models import *
+from bs_orm import Requests
+import models 
 
-# Better_orm.get_generate_db_script()
+# Requests.db_settings.models = models
+Requests.create_tables(models)
 
 # Better_orm.create_tables()
-Better_orm.write_row(a, var1='strokaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
-b = a
-b.var1 = 'ababababababbaa'
-b.save()
-b = a.read()
-for i in b:
-    print(i.var1)
+
+
+# for i in models.Chat.search(Id=757577290):
+#     i.update(Group = 'buba', PinnedMessageId = 1211, Time = '11:51')
+
+models.Chat.update(
+    models.Chat.search(
+        Id=757577290
+    ),
+    Group=None
+)
+
 
 # Better_orm.write_row(
 #     User,
