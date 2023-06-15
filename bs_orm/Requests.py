@@ -269,7 +269,7 @@ def migrate():
                     FD_update_list_a, FD_update_list_r])
 
     textFromPattern = f'''import sqlite3
-from better_orm import db_settings
+from bs_orm import db_settings
 
 def upgrade():
     upgrade_execut = """{upgrade}"""
