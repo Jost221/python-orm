@@ -39,4 +39,4 @@ class Chat(Table):
     PinnedMessageId = Integer(nullable=True)
     ColorTheme = String(default='dark')
     Group = String(default='all')
-    Time = String(nullable=True)
+    Time = DataTime(default=datetime.datetime.now())

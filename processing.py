@@ -1,21 +1,22 @@
 from bs_orm import Requests
 import models 
-
+import datetime
 # Requests.db_settings.models = models
 Requests.create_tables(models)
-
-# Better_orm.create_tables()
-
 
 # for i in models.Chat.search(Id=757577290):
 #     i.update(Group = 'buba', PinnedMessageId = 1211, Time = '11:51')
 
-models.Chat.update(
-    models.Chat.search(
-        Id=757577290
-    ),
-    Group=None
-)
+models.Chat.add(Time=datetime.datetime.now())
+# models.Chat.add(Time=datetime.datetime.now())
+
+records = models.Chat.search()
+# records = models.Chat.search()
+Requests.update(records, Time=datetime.datetime.now())
+# for i in records:
+    # print(i.__dict__)
+pass
+
 
 
 # Better_orm.write_row(

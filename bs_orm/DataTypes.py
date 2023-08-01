@@ -1,10 +1,7 @@
-import os
-import sqlite3
 from . import db_settings
+from .logic_assistent import base_function
+import datetime
 
-
-class empty():
-    pass
 class DataType:
     def __init__(self, size=0, nullable=False, default=None, primary_key=False, check=None, unique=None):
         if primary_key and nullable:
@@ -18,15 +15,28 @@ class DataType:
 
 class String(DataType):
     name = "TEXT"
+    type_r = str
+    type_w = str
+    inserts = ['"']*2
+
 
 class Integer(DataType):
     name = "INTEGER"
+    type_r = int
+    type_w = int
+    inserts = ['']*2
 
 class Float(DataType):
     name = "REAL"
+    type_r = float
+    type_w = float
+    inserts = ['']*2
 
-class Binary(DataType):
-    name = "BINARY"
+class DataTime(DataType):
+    name = "TEXT"
+    type_r = lambda self, x : datetime.datetime.strptime(x, '%Y-%m-%d %H:%M:%S.%f')
+    type_w = str
+    inserts = ['"']*2
 
 class ForeignKey(DataType):
     name = "REFERENCES"
@@ -44,106 +54,45 @@ class Table:
     
     @classmethod
     def search(cls, **qwargs):
-        conn = sqlite3.connect(db_settings.path)
-        cur = conn.cursor()
-        request  = f'SELECT * FROM [{cls.__name__}]'
-        if qwargs != {}:
-            request+=' WHERE'
-            for atr, val in qwargs.items():
-                request+=cls.__check_type__(atr, val) + ' AND'
-            request = request[:-4]
-        cur.execute(request)
-        conn.commit()
-        values = cur.fetchall()
-        returned = []
-        obj = {}
-        for line in values:
-            column_names = iter(cur.description)
-            for val in line:
-                obj[next(column_names)[0]] = val
-            returned.append(type(cls.__name__, (Table,), obj))
-        conn.commit()
-        return returned
-
+        return base_function.serach(cls, **qwargs)
+        
     @classmethod
-    def save(cls):
-        conn = sqlite3.connect(db_settings.path)
-        cur = conn.cursor()
-        try:
-            request = f'INSERT INTO [{cls.__name__}] ('
-            values = 'VALUES ('
-            for k, v in cls.__dict__.items():
-                if k not in empty.__dict__.keys():
-                    request+=f'{k}, '
-                    if v.__class__ == str:
-                        values+=f'"{v}", '
-                    else:
-                        values+=f'{v}, '
-            request = request[:-2] + ')'
-            values = values[:-2] + ')'
-            cur.execute(request+values)
-            conn.commit()
-            return True
-        except Exception as ex:
-            raise Exception(f'well congratulations your father goes fucking you with a chair on the head with these words: {ex}')
+    def save(cls) -> bool:
+        return base_function.save(cls)
 
     @classmethod
     def create(cls, **qwargs):
-        obj = qwargs
-        new_cls = type(cls.__name__, (Table,), obj)
-        return new_cls
+        return base_function.create(cls, **qwargs)
     
     @classmethod
-    def add_if_not_exist(cls, **qwargs):
-        if len(cls.search(**qwargs)) != 0:
-            return False
-        obj = qwargs
-        new_cls = type(cls.__name__, (Table,), obj)
-        new_cls.save()
+    def add_if_not_exist(cls, **qwargs) -> bool:
+        return base_function.add_if_not_exist(cls, **qwargs)
 
     @classmethod
-    def add(cls, **qwargs):
-        obj = qwargs
-        new_cls = type(cls.__name__, (Table,), obj)
-        new_cls.save()
+    def add(cls, **qwargs) -> bool:
+        return base_function.add(cls, **qwargs)
 
     @classmethod
-    def execute(cls, execut: str):
-        conn = sqlite3.connect(db_settings.path)
-        cur = conn.cursor()
-        cur.execute(execut)
-        conn.commit()
-        return True
+    def execute(cls, execut: str) -> list[any]:
+        return base_function.execute(cls, execut)
     
     @classmethod
-    def update(cls, objects:list = None, **qwargs):
-        request = ''
-        if objects != None:
-            cls_s = objects
-        else:
-            cls_s = [cls]
-        for cls in cls_s:
-            request += f'UPDATE {cls.__name__} SET'
-            for atr, val in qwargs.items():
-                request+=cls.__check_type__(atr, val) + ','
-            request = request[:-1] + ' WHERE'
-            flag = False
-            for atr, val in cls.__dict__.items():
-                if not atr.startswith('__') and val != None:
-                    request+=cls.__check_type__(atr, val) + ' AND'
-                    flag = True
-            if flag: request = request[:-4]
-            request+'\n'
-        conn = sqlite3.connect(db_settings.path)
-        cur = conn.cursor()
-        cur.executescript(request)
-        conn.commit()
-        return True
+    def update(cls, **qwargs) -> bool:
+        return base_function.update([cls], **qwargs)
     
-    def __check_type__(atr, val):
-        if type(val) == str: 
-            return f' [{atr}] = "{val}"'
-        elif val == None:
-            return f' [{atr}] = NULL'
+    @classmethod
+    def __convert_to_write__(self, col, val):
+        clas = getattr(db_settings.models, self.__name__)
+        value = getattr(clas, col)
+        col = f'[{col}]'
+        if val != None:
+            val = str(value.type_w(val)).join(value.inserts)
         else:
-            return f' [{atr}] = {val}'
+            val = 'NULL'
+        return col, val
+    
+    @classmethod
+    def __convert_of_read__(self, col, val):
+        value = getattr(self, col)
+        val = value.type_r(val)
+        return col, val
