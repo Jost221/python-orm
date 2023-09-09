@@ -26,7 +26,7 @@
 #     puuuuk = DataTypes.String()
 
 # class Todos(DataTypes.Table_Engine):
-#     fk = DataTypes.ForeignKey('Pizdos.obub')
+# fk = DataTypes.ForeignKey('Pizdos.obub')
 # class User1(DataTypes.Table_Engine):
 #     pakpab = DataTypes.Integer()
 
@@ -40,3 +40,5 @@ class Chat(Table):
     ColorTheme = String(default='dark')
     Group = String(default='all')
     Time = DataTime(default=datetime.datetime.now())
+    size = Integer(nullable=True)
+    weight = Integer(default=0, nullable=True)

@@ -101,10 +101,10 @@ def migrate() -> None:
                 for atr in ('"'+'"'.join(new_t[3:])[:-1]).split(','):
                     if atr.replace('"', '').strip() not in table:
                         update_list_a.append(
-                            f'ALTER TABLE "{new_t[1]}" ADD COLUMN {atr[:-1]}')
+                            f'ALTER TABLE "{new_t[1]}" ADD COLUMN {atr}')
                         atr = atr.split('"')[1]
                         FD_update_list_a.append(
-                            f'ALTER TABLE "{new_t[1]}" DROP COLUMN {atr}')
+                            f'ALTER TABLE "{new_t[1]}" DROP COLUMN "{atr}"')
 
     def concatenete_data(string, list_string):
         for i in list_string:
@@ -115,7 +115,7 @@ def migrate() -> None:
 
     upgrade = '\n'
     upgrade = concatenete_data(
-        upgrade, [add_list, remove_list, update_list_a, update_list_r])
+        upgrade, [add_list, remove_list, update_list_r, update_list_a])
     downgrade = '\n'
     downgrade = concatenete_data(
         downgrade, [FD_add_list, FD_remove_list, \
@@ -125,13 +125,13 @@ def migrate() -> None:
 from bs_orm import db_settings
 
 def upgrade():
-    upgrade_execut = """{upgrade}"""
+    upgrade_execut = """{upgrade} """
     conn = sqlite3.connect(db_settings.path)
     cur = conn.cursor()
     cur.executescript(upgrade_execut)
 
 def downgrade():
-    downgrade_execut = """{downgrade}"""
+    downgrade_execut = """{downgrade} """
     conn = sqlite3.connect(db_settings.path)
     cur = conn.cursor()
     cur.executescript(downgrade_execut)'''
@@ -146,28 +146,7 @@ def downgrade():
         f.write(textFromPattern)
 
     cur.execute(f'INSERT INTO migrations (filename) VALUES({fileName})')
+    print(upgrade)
     cur.executescript(upgrade)
     conn.commit()
     conn.close()
-
-# def update(cls_s, **qwargs):
-#         request = ''
-#         if type(cls_s) != list:
-#             cls_s = [cls_s]
-#         for cls in cls_s:
-#             request += f'UPDATE {cls.__name__} SET'
-#             for atr, val in qwargs.items():
-#                 request+=cls.__check_type__(atr, val) + ','
-#             request = request[:-1] + ' WHERE'
-#             flag = False
-#             for atr, val in cls.__dict__.items():
-#                 if not atr.startswith('__') and val != None:
-#                     request+=cls.__check_type__(atr, val) + ' AND'
-#                     flag = True
-#             if flag: request = request[:-4]
-#             request+'\n'
-#         conn = sqlite3.connect(db_settings.path)
-#         cur = conn.cursor()
-#         cur.executescript(request)
-#         conn.commit()
-#         return True
